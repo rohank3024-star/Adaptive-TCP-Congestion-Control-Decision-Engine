@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Data (regeneratable)
+# data/
+
+# Models (regeneratable)  
+# models/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temp files
+*.tmp
+pipeline_output.txt
+docs_output.txt
+pdf_output.txt
+read_docs.py
+read_pdf.py

@@ -1,0 +1,62 @@
+[
+  {
+    "test_id": "TC-01",
+    "description": "TCP variant availability",
+    "status": "PASS",
+    "timestamp": "2026-10-13T11:51:05.326630"
+  },
+  {
+    "test_id": "TC-02",
+    "description": "Topology structure",
+    "status": "PASS",
+    "timestamp": "2026-10-13T11:51:05.329917"
+  },
+  {
+    "test_id": "TC-03",
+    "description": "Network condition config",
+    "status": "PASS",
+    "timestamp": "2026-10-13T11:51:05.331622"
+  },
+  {
+    "test_id": "TC-04",
+    "description": "Benchmark per variant",
+    "status": "PASS",
+    "timestamp": "2026-10-13T11:51:05.335633"
+  },
+  {
+    "test_id": "TC-05",
+    "description": "Repetition & aggregation",
+    "status": "PASS",
+    "timestamp": "2026-10-13T11:51:05.346097"
+  },
+  {
+    "test_id": "TC-06",
+    "description": "Dataset B generation",
+    "status": "PASS",
+    "timestamp": "2026-10-13T11:51:05.416700"
+  },
+  {
+    "test_id": "TC-07",
+    "description": "Feature columns (no leakage)",
+    "status": "PASS",
+    "timestamp": "2026-10-13T11:51:05.416700"
+  },
+  {
+    "test_id": "TC-08",
+    "description": "Held-out evaluation",
+    "status": "PASS",
+    "timestamp": "2026-10-13T11:51:05.428704"
+  },
+  {
+    "test_id": "TC-09",
+    "description": "Predictor output",
+    "status": "PASS",
+    "timestamp": "2026-10-13T11:51:05.794361"
+  },
+  {
+    "test_id": "TC-10",
+    "description": "Baseline comparison",
+    "status": "PASS",
+    "timestamp": "2026-10-13T11:51:05.796114"
+  }
+]
