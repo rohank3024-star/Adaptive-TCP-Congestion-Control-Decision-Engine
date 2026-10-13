@@ -27,3 +27,7 @@ docs_output.txt
 pdf_output.txt
 read_docs.py
 read_pdf.py
+
+# Docs (kept locally only)
+*.docx
+*.pdf
