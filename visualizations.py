@@ -82,7 +82,7 @@ def plot_throughput_comparison(df_raw, save=True):
     variants = ["reno", "cubic", "bbr"]
     data = [df_raw[df_raw["tcp_variant"] == v]["throughput_mbps"] for v in variants]
     
-    bp = ax.boxplot(data, labels=["TCP Reno", "TCP Cubic", "TCP BBR"],
+    bp = ax.boxplot(data, tick_labels=["TCP Reno", "TCP Cubic", "TCP BBR"],
                     patch_artist=True, notch=True, widths=0.5)
     
     for patch, color in zip(bp["boxes"], [COLORS["reno"], COLORS["cubic"], COLORS["bbr"]]):
