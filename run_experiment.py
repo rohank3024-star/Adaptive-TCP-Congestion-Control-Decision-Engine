@@ -20,7 +20,7 @@ import os
 from datetime import datetime
 
 from network_config import (
-    generate_pilot_grid, generate_full_grid,
+    generate_smoke_grid, generate_pilot_grid, generate_full_grid,
     apply_condition, clear_condition, measure_baseline_rtt
 )
 from benchmark_runner import (
@@ -39,7 +39,7 @@ def run_experiments(mode="pilot", repetitions=3, csv_path=RAW_CSV_FILE):
 
     Parameters
     ----------
-    mode        : str – 'pilot' (18 conditions) or 'full' (150 conditions)
+    mode        : str – 'smoke' (1 condition), 'pilot' (18), or 'full' (150)
     repetitions : int – number of repetitions per condition (default 3)
     csv_path    : str – output CSV path
     """
@@ -56,8 +56,13 @@ def run_experiments(mode="pilot", repetitions=3, csv_path=RAW_CSV_FILE):
         sys.exit(1)
 
     # --- Step 2: Generate parameter grid ---
-    print(f"\n[STEP 2] Generating {'pilot' if mode == 'pilot' else 'full'} parameter grid...")
-    conditions = generate_pilot_grid() if mode == "pilot" else generate_full_grid()
+    print(f"\n[STEP 2] Generating {mode} parameter grid...")
+    grid_generators = {
+        "smoke": generate_smoke_grid,
+        "pilot": generate_pilot_grid,
+        "full": generate_full_grid,
+    }
+    conditions = grid_generators[mode]()
     total_runs = len(conditions) * 3 * repetitions  # 3 TCP variants
     print(f"         {len(conditions)} conditions × 3 variants × {repetitions} reps = {total_runs} runs")
     est_time_min = total_runs * 15 / 60  # ~15s per run
@@ -109,11 +114,12 @@ def run_experiments(mode="pilot", repetitions=3, csv_path=RAW_CSV_FILE):
                 start_iperf_server(h2)
                 time.sleep(0.3)
 
-                benchmark_condition(
+                rows = benchmark_condition(
                     h1, h2, bw, delay, loss,
                     baseline_rtt, run_id=rep, csv_path=csv_path
                 )
-                completed += 3  # 3 variants per benchmark call
+                completed += len(rows)
+                failed += 3 - len(rows)
             except Exception as e:
                 print(f"  [ERROR] Experiment failed: {e}")
                 failed += 3
@@ -146,8 +152,8 @@ if __name__ == "__main__":
         description="Run TCP congestion control experiments"
     )
     parser.add_argument(
-        "--mode", choices=["pilot", "full"], default="pilot",
-        help="Experiment mode: 'pilot' (54 runs) or 'full' (1350 runs)"
+        "--mode", choices=["smoke", "pilot", "full"], default="pilot",
+        help="Experiment mode: smoke (3 runs), pilot (54 runs), or full (1350 runs)"
     )
     parser.add_argument(
         "--repetitions", type=int, default=3,

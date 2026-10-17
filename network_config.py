@@ -35,6 +35,10 @@ PILOT_BANDWIDTHS = [5, 20, 100]
 PILOT_DELAYS     = [5, 50, 200]
 PILOT_LOSSES     = [0, 2]
 
+# One-condition pre-pilot validation. This is intentionally separate from the
+# pilot grid so a live environment can be checked before a longer run.
+SMOKE_CONDITION = {"bandwidth_mbps": 20, "delay_ms": 50, "loss_pct": 1}
+
 
 # ---------------------------------------------------------------------------
 # tc / netem helpers
@@ -169,6 +173,12 @@ def generate_pilot_grid():
                 })
     print(f"[GRID] Generated {len(conditions)} network conditions (pilot grid)")
     return conditions
+
+
+def generate_smoke_grid():
+    """Generate the single condition used to validate live measurements."""
+    print("[GRID] Generated 1 smoke-test network condition")
+    return [SMOKE_CONDITION.copy()]
 
 
 # ---------------------------------------------------------------------------

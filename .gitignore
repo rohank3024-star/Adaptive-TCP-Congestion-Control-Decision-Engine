@@ -5,9 +5,11 @@ __pycache__/
 dist/
 build/
 *.egg
+.venv/
 
 # Data (regeneratable)
 # data/
+data/real_world/
 
 # Models (regeneratable)  
 # models/

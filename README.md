@@ -62,12 +62,19 @@ CN_Project/
 ├── data_preparation.py        # M4: Dataset aggregation
 ├── ml_pipeline.py             # M5: Random Forest training & evaluation
 ├── predictor.py               # M6: TCP variant predictor CLI
+├── dashboard.py               # Local results dashboard and advisory predictor
 ├── visualizations.py          # 9 plot types for analysis
 ├── test_cases.py              # 10 test cases (TC-01 to TC-10)
+├── repair_experiment.py       # Rerun missing Mininet observations
+├── fetch_pantheon_data.py     # Separate Stanford Pantheon data fetcher
 ├── requirements.txt           # Python dependencies
 ├── data/
-│   ├── dataset_a_raw.csv      # Raw benchmark data (1,350 rows)
-│   └── dataset_b_ml.csv       # Aggregated ML data (150 rows)
+│   ├── dataset_a_raw.csv      # Synthetic development data (1,350 rows)
+│   ├── dataset_a_mininet_full.csv          # Original full Mininet run
+│   ├── dataset_a_mininet_full_recovered.csv # Complete, provenance-tagged dataset
+│   ├── dataset_b_mininet.csv               # Aggregated real Mininet data
+│   ├── dataset_pantheon_real.csv           # Separate historical Pantheon data
+│   └── dataset_b_ml.csv                    # Synthetic development aggregate
 ├── models/
 │   ├── random_forest.joblib   # Trained RF model
 │   └── decision_tree.joblib   # Baseline DT model
@@ -95,18 +102,15 @@ python predictor.py --interactive
 python test_cases.py
 ```
 
-## Key Results
+## Latest real Mininet results
 
-| Metric | Value |
-|--------|-------|
-| Dataset Size | 1,350 raw rows → 150 conditions |
-| Random Forest Accuracy | 83.33% |
-| Random Forest F1 Score | 0.8629 |
-| Decision Tree Accuracy | 90.00% |
-| Always Reno Throughput | 2.39 Mbps |
-| Always Cubic Throughput | 2.64 Mbps |
-| Always BBR Throughput | 20.66 Mbps |
-| ML Adaptive Throughput | 20.56 Mbps |
+The completed Mininet experiment contains 1,350 observations across 150
+conditions. On 30 held-out conditions, Random Forest accuracy was 76.67% and
+adaptive throughput was 29.96 Mbps, versus 30.02 Mbps for always-BBR (−0.21%).
+This result does not demonstrate an adaptive throughput improvement. The older
+synthetic development scores are not experimental evidence. See
+[`REPORT_MININET.md`](REPORT_MININET.md) for methodology, recovery provenance,
+limitations, and the full results.
 
 ## Running on Linux/WSL2 (Mininet)
 
@@ -120,10 +124,56 @@ sudo python3 run_experiment.py --mode pilot
 sudo python3 run_experiment.py --mode full --repetitions 3
 
 # Then run ML pipeline
+# This default processes the synthetic demonstration dataset only.
 python3 data_preparation.py
 python3 ml_pipeline.py
 python3 visualizations.py
 python3 predictor.py --demo
+```
+
+## Real Mininet Workflow
+
+The default `dataset_a_raw.csv`, models, results, and plots are synthetic
+development artifacts. Keep real Mininet measurements in their own files:
+
+```bash
+# After BBR is available and a Mininet pilot succeeds
+sudo python3 run_experiment.py --mode smoke --repetitions 1 \
+  --output data/dataset_a_mininet_smoke.csv
+sudo python3 run_experiment.py --mode pilot --repetitions 3 \
+  --output data/dataset_a_mininet.csv
+python3 data_preparation.py --input data/dataset_a_mininet.csv \
+  --output data/dataset_b_mininet.csv
+python3 ml_pipeline.py --input data/dataset_b_mininet.csv \
+  --model-dir models/mininet --results-dir results/mininet
+python3 visualizations.py --raw data/dataset_a_mininet.csv \
+  --ml data/dataset_b_mininet.csv --results results/mininet/evaluation_results.json \
+  --output-dir plots/mininet
+python3 predictor.py --model models/mininet/random_forest.joblib --demo
+```
+
+The completed full-grid analysis is stored separately in
+`data/dataset_a_mininet_full_recovered.csv`, `data/dataset_b_mininet.csv`,
+`models/mininet_full/`, `results/mininet_full/`, and `plots/mininet_full/`.
+Start its local results dashboard with:
+
+```bash
+python3 dashboard.py
+# Open http://127.0.0.1:8000
+```
+
+The dashboard displays measured Mininet throughput and held-out comparisons,
+and provides an advisory model prediction. It does not change the active TCP
+algorithm or run network traffic.
+
+Do not combine synthetic, smoke-test, Pantheon, and Mininet datasets.
+
+If an experiment CSV contains missing receiver-side metrics, preserve it and
+repair only those rows into a new file:
+
+```bash
+sudo python3 repair_experiment.py --input data/dataset_a_mininet_full.csv \
+  --output data/dataset_a_mininet_full_recovered.csv
 ```
 
 ## Test Results

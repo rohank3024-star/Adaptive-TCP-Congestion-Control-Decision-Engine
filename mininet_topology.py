@@ -70,21 +70,23 @@ def verify_tcp_variants():
 # ---------------------------------------------------------------------------
 # Mininet topology creation
 # ---------------------------------------------------------------------------
-def create_topology(bandwidth="100mbit", delay="5ms", loss=0):
+def create_topology():
     """
     Create the H1 – S1 – H2 Mininet topology.
     Returns (net, h1, h2) or None on failure.
     
     Parameters
     ----------
-    bandwidth : str   – Link bandwidth (e.g., '10mbit')
-    delay     : str   – One-way link delay (e.g., '50ms')
-    loss      : float – Packet-loss percentage (e.g., 2 for 2%)
+    The topology intentionally has no traffic-control parameters.  Every
+    experiment condition is applied later by ``network_config.apply_condition``.
+    Keeping the initial links unimpaired prevents a hidden default delay or
+    bandwidth cap from contaminating a configured condition.
     """
     try:
         from mininet.net import Mininet
         from mininet.topo import Topo
         from mininet.link import TCLink
+        from mininet.node import OVSBridge
         from mininet.log import setLogLevel
     except ImportError:
         print("[ERROR] Mininet is not installed. Run: sudo apt install mininet")
@@ -98,17 +100,11 @@ def create_topology(bandwidth="100mbit", delay="5ms", loss=0):
             switch = self.addSwitch("s1")
             h1 = self.addHost("h1")
             h2 = self.addHost("h2")
-            # Link parameters set here as defaults; they will be
-            # overridden per-experiment by network_config.py
-            self.addLink(h1, switch, cls=TCLink,
-                         bw=int(bandwidth.replace("mbit", "")),
-                         delay=delay, loss=loss)
-            self.addLink(h2, switch, cls=TCLink,
-                         bw=int(bandwidth.replace("mbit", "")),
-                         delay=delay, loss=loss)
+            self.addLink(h1, switch, cls=TCLink)
+            self.addLink(h2, switch, cls=TCLink)
 
     topo = LinearTopo()
-    net = Mininet(topo=topo, link=TCLink)
+    net = Mininet(topo=topo, link=TCLink, switch=OVSBridge, controller=None)
     net.start()
 
     h1 = net.get("h1")

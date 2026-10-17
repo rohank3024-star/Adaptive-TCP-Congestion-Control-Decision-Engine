@@ -1,62 +1,62 @@
 [
   {
     "test_id": "TC-01",
-    "description": "TCP variant availability",
+    "description": "TCP variant availability check",
     "status": "PASS",
-    "timestamp": "2026-10-13T12:35:00.581871"
+    "timestamp": "2026-10-17T10:07:27.350453"
   },
   {
     "test_id": "TC-02",
-    "description": "Topology structure",
+    "description": "Topology structure verification (H1\u2013S1\u2013H2)",
     "status": "PASS",
-    "timestamp": "2026-10-13T12:35:00.585871"
+    "timestamp": "2026-10-17T10:07:27.350751"
   },
   {
     "test_id": "TC-03",
-    "description": "Network condition config",
+    "description": "Network condition configuration",
     "status": "PASS",
-    "timestamp": "2026-10-13T12:35:00.586885"
+    "timestamp": "2026-10-17T10:07:27.350795"
   },
   {
     "test_id": "TC-04",
-    "description": "Benchmark per variant",
+    "description": "iperf3 benchmark execution per variant",
     "status": "PASS",
-    "timestamp": "2026-10-13T12:35:00.596873"
+    "timestamp": "2026-10-17T10:07:27.354414"
   },
   {
     "test_id": "TC-05",
-    "description": "Repetition & aggregation",
+    "description": "Repetition and median aggregation",
     "status": "PASS",
-    "timestamp": "2026-10-13T12:35:00.618873"
+    "timestamp": "2026-10-17T10:07:27.359862"
   },
   {
     "test_id": "TC-06",
-    "description": "Dataset B generation",
+    "description": "Dataset B generation with correct labels",
     "status": "PASS",
-    "timestamp": "2026-10-13T12:35:00.770108"
+    "timestamp": "2026-10-17T10:07:27.416882"
   },
   {
     "test_id": "TC-07",
-    "description": "Feature columns (no leakage)",
+    "description": "Classifier feature columns (no leakage)",
     "status": "PASS",
-    "timestamp": "2026-10-13T12:35:00.771107"
+    "timestamp": "2026-10-17T10:07:28.342727"
   },
   {
     "test_id": "TC-08",
-    "description": "Held-out evaluation",
+    "description": "Held-out evaluation (no data leakage)",
     "status": "PASS",
-    "timestamp": "2026-10-13T12:35:00.818108"
+    "timestamp": "2026-10-17T10:07:28.362148"
   },
   {
     "test_id": "TC-09",
-    "description": "Predictor output",
+    "description": "Predictor returns valid TCP variant",
     "status": "PASS",
-    "timestamp": "2026-10-13T12:35:01.520138"
+    "timestamp": "2026-10-17T10:07:28.878494"
   },
   {
     "test_id": "TC-10",
-    "description": "Baseline comparison",
+    "description": "Baseline comparison (4 strategies evaluated)",
     "status": "PASS",
-    "timestamp": "2026-10-13T12:35:01.521138"
+    "timestamp": "2026-10-17T10:07:28.879454"
   }
 ]

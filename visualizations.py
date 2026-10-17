@@ -26,6 +26,7 @@ import matplotlib.patches as mpatches
 import seaborn as sns
 import os
 import json
+import argparse
 
 # ---------------------------------------------------------------------------
 # Config
@@ -497,19 +498,22 @@ def plot_model_comparison(results, save=True):
 # ---------------------------------------------------------------------------
 # Generate all plots
 # ---------------------------------------------------------------------------
-def generate_all_plots():
+def generate_all_plots(raw_csv=RAW_CSV, ml_csv=ML_CSV,
+                       results_json=RESULTS_JSON, plot_dir=PLOT_DIR):
     """Generate all visualization plots."""
+    global PLOT_DIR
+    PLOT_DIR = plot_dir
     print("=" * 60)
     print("  Generating All Visualizations")
     print("=" * 60)
     
     # Load data
-    df_raw = pd.read_csv(RAW_CSV) if os.path.exists(RAW_CSV) else None
-    df_ml  = pd.read_csv(ML_CSV) if os.path.exists(ML_CSV) else None
+    df_raw = pd.read_csv(raw_csv) if os.path.exists(raw_csv) else None
+    df_ml  = pd.read_csv(ml_csv) if os.path.exists(ml_csv) else None
     
     results = {}
-    if os.path.exists(RESULTS_JSON):
-        with open(RESULTS_JSON, "r") as f:
+    if os.path.exists(results_json):
+        with open(results_json, "r") as f:
             results = json.load(f)
     
     if df_raw is not None:
@@ -540,4 +544,10 @@ def generate_all_plots():
 # Main
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    generate_all_plots()
+    parser = argparse.ArgumentParser(description="Generate TCP experiment visualizations.")
+    parser.add_argument("--raw", default=RAW_CSV, help="Raw experiment CSV")
+    parser.add_argument("--ml", default=ML_CSV, help="Aggregated ML CSV")
+    parser.add_argument("--results", default=RESULTS_JSON, help="Evaluation JSON")
+    parser.add_argument("--output-dir", default=PLOT_DIR, help="Directory for PNG plots")
+    args = parser.parse_args()
+    generate_all_plots(args.raw, args.ml, args.results, args.output_dir)

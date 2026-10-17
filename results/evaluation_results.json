@@ -1,5 +1,6 @@
 {
-  "timestamp": "2026-10-13T12:34:48.744573",
+  "timestamp": "2026-10-17T10:07:24.682001",
+  "input_dataset": "data/dataset_b_ml.csv",
   "dataset_size": 150,
   "train_size": 120,
   "test_size": 30,

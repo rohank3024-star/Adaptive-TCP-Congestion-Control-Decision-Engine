@@ -19,6 +19,7 @@ import numpy as np
 import os
 import json
 import joblib
+import argparse
 from datetime import datetime
 
 from sklearn.model_selection import GroupShuffleSplit
@@ -298,7 +299,7 @@ def save_results(results, results_dir=RESULTS_DIR):
 # ---------------------------------------------------------------------------
 # Full ML pipeline
 # ---------------------------------------------------------------------------
-def run_ml_pipeline(ml_csv=ML_CSV):
+def run_ml_pipeline(ml_csv=ML_CSV, model_dir=MODEL_DIR, results_dir=RESULTS_DIR):
     """
     Execute the complete ML pipeline:
     1. Load data
@@ -340,11 +341,12 @@ def run_ml_pipeline(ml_csv=ML_CSV):
     comparison = baseline_comparison(df_with_pred, test_idx)
     
     # Save everything
-    save_model(dt_model, "decision_tree")
-    save_model(rf_model, "random_forest")
+    save_model(dt_model, "decision_tree", model_dir)
+    save_model(rf_model, "random_forest", model_dir)
     
     all_results = {
         "timestamp": datetime.now().isoformat(),
+        "input_dataset": ml_csv,
         "dataset_size": len(df),
         "train_size": len(train_idx),
         "test_size": len(test_idx),
@@ -354,7 +356,7 @@ def run_ml_pipeline(ml_csv=ML_CSV):
         "rf_feature_importance": rf_importance,
         "baseline_comparison": comparison
     }
-    save_results(all_results)
+    save_results(all_results, results_dir)
     
     print(f"\n{'='*70}")
     print(f"  ML PIPELINE COMPLETE")
@@ -371,4 +373,9 @@ def run_ml_pipeline(ml_csv=ML_CSV):
 # Main
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    results, model = run_ml_pipeline()
+    parser = argparse.ArgumentParser(description="Train and evaluate TCP-selection models.")
+    parser.add_argument("--input", default=ML_CSV, help="Aggregated ML CSV input path")
+    parser.add_argument("--model-dir", default=MODEL_DIR, help="Directory for trained models")
+    parser.add_argument("--results-dir", default=RESULTS_DIR, help="Directory for evaluation JSON")
+    args = parser.parse_args()
+    results, model = run_ml_pipeline(args.input, args.model_dir, args.results_dir)

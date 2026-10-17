@@ -19,6 +19,7 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import argparse
 
 
 # ---------------------------------------------------------------------------
@@ -44,11 +45,18 @@ def load_raw_data(filepath=RAW_CSV):
     
     # Validate required columns
     required = ["bandwidth_mbps", "delay_ms", "loss_pct", "tcp_variant",
-                "throughput_mbps", "retransmissions", "rtt_ms", "run_id"]
+                "throughput_mbps", "retransmissions", "run_id"]
     missing = [c for c in required if c not in df.columns]
     if missing:
         print(f"[ERROR] Missing columns: {missing}")
         return None
+
+    if "baseline_rtt_ms" not in df.columns and "rtt_ms" not in df.columns:
+        print("[ERROR] Missing baseline_rtt_ms (or legacy rtt_ms) column.")
+        return None
+    if "baseline_rtt_ms" not in df.columns:
+        print("[WARNING] Using legacy rtt_ms as baseline RTT. This is not valid "
+              "for new Mininet experiments because it may be post-selection.")
     
     # Basic data quality checks
     print(f"  Unique conditions: {df.groupby(CONDITION_COLS).ngroups}")
@@ -57,8 +65,37 @@ def load_raw_data(filepath=RAW_CSV):
     print(f"  Missing values: {df.isnull().sum().sum()}")
     print(f"  Throughput range: [{df['throughput_mbps'].min():.2f}, "
           f"{df['throughput_mbps'].max():.2f}] Mbps")
+
+    if not validate_complete_conditions(df):
+        return None
     
     return df
+
+
+def validate_complete_conditions(df):
+    """Reject incomplete or failed conditions before ML aggregation."""
+    invalid = df[(df["throughput_mbps"] <= 0) | (df["retransmissions"] < 0)]
+    if not invalid.empty:
+        print(f"[ERROR] Found {len(invalid)} failed/invalid measurement rows.")
+        return False
+
+    variants_by_condition = df.groupby(CONDITION_COLS)["tcp_variant"].agg(set)
+    incomplete = variants_by_condition[variants_by_condition != set(TCP_VARIANTS)]
+    if not incomplete.empty:
+        print(f"[ERROR] {len(incomplete)} conditions do not contain exactly Reno, Cubic, and BBR.")
+        return False
+
+    repetitions = df.groupby(CONDITION_COLS + ["tcp_variant"]).size()
+    if repetitions.nunique() != 1:
+        print("[ERROR] Unequal repetition counts across condition/variant groups.")
+        return False
+
+    baseline_column = "baseline_rtt_ms" if "baseline_rtt_ms" in df.columns else "rtt_ms"
+    if (df[baseline_column] <= 0).any():
+        print("[ERROR] Found invalid baseline RTT values.")
+        return False
+    print(f"  Complete conditions: {len(variants_by_condition)}; repetitions per variant: {repetitions.iloc[0]}")
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -72,7 +109,7 @@ def aggregate_to_ml_dataset(df_raw):
     1. Group by (condition, variant)
     2. Compute median throughput and retransmissions across repetitions
     3. Pivot variants to columns
-    4. Compute baseline_rtt as median RTT from raw data
+    4. Compute baseline_rtt from pre-selection ping measurements
     5. Label best_variant
     
     Parameters
@@ -87,7 +124,6 @@ def aggregate_to_ml_dataset(df_raw):
     agg = df_raw.groupby(CONDITION_COLS + ["tcp_variant"]).agg(
         median_throughput=("throughput_mbps", "median"),
         median_retransmissions=("retransmissions", "median"),
-        median_rtt=("rtt_ms", "median"),
         num_runs=("run_id", "count")
     ).reset_index()
     
@@ -106,8 +142,11 @@ def aggregate_to_ml_dataset(df_raw):
         for c in tp_pivot.columns
     ]
     
-    # Step 3: Compute baseline RTT per condition (median across all variants and runs)
-    baseline_rtt = df_raw.groupby(CONDITION_COLS)["rtt_ms"].median().reset_index()
+    # Step 3: Compute baseline RTT from ping, before a TCP variant is selected.
+    # ``rtt_ms`` is supported only for legacy/synthetic data and emits a warning
+    # in load_raw_data; new Mininet datasets use baseline_rtt_ms.
+    baseline_column = "baseline_rtt_ms" if "baseline_rtt_ms" in df_raw.columns else "rtt_ms"
+    baseline_rtt = df_raw.groupby(CONDITION_COLS)[baseline_column].median().reset_index()
     baseline_rtt.columns = CONDITION_COLS + ["baseline_rtt"]
     
     # Step 4: Merge
@@ -189,7 +228,11 @@ def prepare_data(raw_path=RAW_CSV, ml_path=ML_CSV):
 # Main
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    df = prepare_data()
+    parser = argparse.ArgumentParser(description="Aggregate one experiment dataset for ML.")
+    parser.add_argument("--input", default=RAW_CSV, help="Raw CSV input path")
+    parser.add_argument("--output", default=ML_CSV, help="Aggregated CSV output path")
+    args = parser.parse_args()
+    df = prepare_data(args.input, args.output)
     if df is not None:
         print(f"\n\nFirst 5 rows of Dataset B:")
         print(df.head().to_string(index=False))
