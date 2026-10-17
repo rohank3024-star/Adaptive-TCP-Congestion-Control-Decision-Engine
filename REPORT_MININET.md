@@ -113,6 +113,142 @@ python3 visualizations.py \
 python3 dashboard.py
 ```
 
+## Paired-flow fairness and loaded-latency extension
+
+`fairness_experiment.py` adds a separate experiment rather than appending
+incompatible measurements to the original single-flow ML dataset. Two hosts
+run simultaneous TCP transfers to a third host through a shared bandwidth-
+limited switch egress. The bottleneck uses either `pfifo` or `fq_codel` with
+the same 1,000-packet limit; endpoint egress qdiscs apply the configured
+one-way delay and loss. A ping from each sender runs during both transfers.
+Each complete paired run records receiver throughput and sender retransmits
+for both flows, per-sender loaded ping RTT/loss, and Jain's fairness index.
+Unloaded baseline ping is captured immediately before the simultaneous flows,
+so RTT increase under load is directly available. TCP algorithm roles, pair
+order, and queue-discipline order alternate between repetitions to reduce
+host-role and ordering bias.
+The qdisc is checked after installation before data collection.
+
+Run a short Reno-vs-BBR smoke check first, writing to a new file:
+
+```bash
+sudo python3 fairness_experiment.py --mode smoke --repetitions 1 \
+  --output data/dataset_c_fairness_smoke.csv
+```
+
+The smoke run tests both queue disciplines at a 20 Mbps shared bottleneck,
+50 ms endpoint delay, and no configured loss. After checking it, run all three
+variant pairings with repetitions (6 balances each algorithm's sender role):
+
+```bash
+sudo python3 fairness_experiment.py --mode pilot --repetitions 6 \
+  --bandwidth 20 --delay 50 --loss 0 \
+  --output data/dataset_c_fairness_mininet.csv
+sudo python3 fairness_experiment.py --mode pilot --repetitions 6 \
+  --bandwidth 5 --delay 20 --loss 0 \
+  --output data/dataset_c_fairness_5mbps.csv
+sudo python3 fairness_experiment.py --mode pilot --repetitions 6 \
+  --bandwidth 50 --delay 100 --loss 0 \
+  --output data/dataset_c_fairness_50mbps.csv
+python3 analyze_fairness.py data/dataset_c_fairness_mininet.csv \
+  --max-loaded-rtt-increase-ms 20 \
+  --output results/fairness_mininet_summary.json
+python3 analyze_fairness.py data/dataset_c_fairness_5mbps.csv \
+  --max-loaded-rtt-increase-ms 20 \
+  --output results/fairness_5mbps_summary.json
+python3 analyze_fairness.py data/dataset_c_fairness_50mbps.csv \
+  --max-loaded-rtt-increase-ms 20 \
+  --output results/fairness_50mbps_summary.json
+python3 dashboard.py \
+  --fairness-csv data/dataset_c_fairness_mininet.csv \
+  --fairness-csv data/dataset_c_fairness_5mbps.csv \
+  --fairness-csv data/dataset_c_fairness_50mbps.csv
+```
+
+### Initial smoke observation (exploratory only)
+
+The first smoke test completed both queue cases with no failed runs and produced
+four flow rows in `data/dataset_c_fairness_smoke.csv`. For one Reno-vs-BBR pair,
+the measured summary was:
+
+| Queue | Reno / BBR throughput | Mean loaded RTT | RTT increase over baseline | Ping loss | Jain fairness |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `pfifo` | 12.01 / 1.78 Mbps | 1031.27 ms | 930.91 ms | 20% (1 of 5 probes) | 0.645 |
+| `fq_codel` | 7.47 / 10.27 Mbps | 100.40 ms | approximately 0 ms | 0% (0 of 5 probes) | 0.976 |
+
+Baseline RTT was about 100 ms in both cases, consistent with the configured
+50 ms one-way endpoint delay. This single pair/repetition suggests severe
+queueing delay and lower fairness with FIFO in this particular run, while
+FQ-CoDel kept measured RTT near baseline. The 5-packet ping sample is coarse,
+and one repetition cannot establish a general queue-discipline effect; use the
+repeated pilot and confidence intervals before drawing conclusions.
+
+### Six-repetition pilot result (one configured network condition)
+
+The pilot completed all 36 paired tests (18 per queue discipline), with no
+failed or incomplete pairs. The following are paired differences computed for
+each algorithm pair and repetition as `FQ-CoDel minus pfifo`; intervals are
+two-sided 95% Student-t intervals over the six paired repetitions:
+
+| Competing flows | Aggregate throughput change (Mbps) | Loaded RTT increase change (ms) | Jain fairness change |
+| --- | ---: | ---: | ---: |
+| BBR + Cubic | -0.33 [-0.45, -0.22] | -222.78 [-234.39, -211.18] | +0.244 [+0.222, +0.266] |
+| BBR + Reno | +5.72 [+4.75, +6.69] | -953.39 [-972.01, -934.76] | +0.329 [+0.304, +0.353] |
+| Cubic + Reno | +3.28 [+2.44, +4.11] | -948.42 [-1046.46, -850.38] | +0.352 [+0.286, +0.418] |
+
+In this setup (20 Mbps shared egress, 50 ms one-way endpoint delay, 0% configured
+loss), FQ-CoDel reduced loaded RTT and improved fairness for all three flow
+pairs. Its aggregate throughput was slightly lower for BBR+Cubic, but higher
+for the pairs involving Reno. The pilot therefore illustrates a measurable
+latency/fairness versus throughput tradeoff rather than a universal winner.
+These intervals summarize one emulated topology and one condition with six
+repetitions; they do not establish behavior across other bandwidths, delays,
+loss rates, topologies, or real Internet paths. They also are not adjusted for
+the three pairwise comparisons.
+
+### Cross-condition follow-up
+
+Two additional six-repetition pilots used the same topology, queue setup, and
+zero configured loss, changing the bottleneck bandwidth and one-way delay.
+Together with the 20 Mbps / 50 ms pilot above, these provide 108 complete
+paired tests (36 per condition). The table reports paired `fq_codel - pfifo`
+changes; intervals are 95% Student-t confidence intervals over six repetitions.
+
+| Condition | Competing flows | Aggregate throughput Δ Mbps [95% CI] | Loaded RTT-increase Δ ms [95% CI] | Jain fairness Δ [95% CI] |
+| --- | --- | ---: | ---: | ---: |
+| 5 Mbps / 20 ms | BBR + Cubic | -0.09 [-0.15, -0.03] | -185.90 [-187.62, -184.19] | +0.227 [+0.222, +0.232] |
+| 5 Mbps / 20 ms | BBR + Reno | +1.38 [+1.27, +1.49] | -1585.95 [-2163.29, -1008.61] | +0.411 [+0.402, +0.421] |
+| 5 Mbps / 20 ms | Cubic + Reno | +1.22 [+0.99, +1.44] | -1603.02 [-1877.37, -1328.68] | +0.430 [+0.425, +0.435] |
+| 20 Mbps / 50 ms | BBR + Cubic | -0.33 [-0.45, -0.22] | -222.78 [-234.39, -211.18] | +0.244 [+0.222, +0.266] |
+| 20 Mbps / 50 ms | BBR + Reno | +5.72 [+4.75, +6.69] | -953.39 [-972.01, -934.76] | +0.329 [+0.304, +0.353] |
+| 20 Mbps / 50 ms | Cubic + Reno | +3.28 [+2.44, +4.11] | -948.42 [-1046.46, -850.38] | +0.352 [+0.286, +0.418] |
+| 50 Mbps / 100 ms | BBR + Cubic | -1.19 [-1.63, -0.75] | -190.28 [-195.46, -185.10] | +0.034 [-0.005, +0.072] |
+| 50 Mbps / 100 ms | BBR + Reno | +1.94 [-0.33, +4.21] | -269.37 [-271.47, -267.27] | +0.192 [+0.165, +0.220] |
+| 50 Mbps / 100 ms | Cubic + Reno | -17.34 [-18.70, -15.98] | -295.57 [-325.30, -265.85] | +0.283 [+0.131, +0.435] |
+
+Across the nine pair/condition combinations, FQ-CoDel reduced measured loaded
+RTT increase. Aggregate throughput varied: it was not uniformly higher, and
+the observed reduction for Cubic+Reno at 50 Mbps / 100 ms is an important
+tradeoff rather than a result to hide. The fairness-change interval for
+BBR+Cubic at 50 Mbps / 100 ms includes zero, so this experiment does not show a
+clear fairness improvement for that particular combination. These three
+controlled points are stronger than a single-condition pilot but still do not
+support broad claims about other network paths or conditions. Per-condition
+CSV files and machine-readable summaries are kept separate under `data/` and
+`results/` so they are not mistaken for rows in the ML training dataset.
+
+The analyzer skips incomplete pairs and reports per-queue/per-algorithm-pair
+means, paired FQ-CoDel-minus-FIFO differences, and 95% Student-t confidence
+intervals over complete repetitions. The
+optional RTT-increase ceiling reports throughput only for observations meeting
+that explicit latency objective; choose and justify the ceiling for the target
+application rather than treating 20 ms as universal. This CSV is a new
+measurement artifact; it must not be fed to the current single-flow
+throughput-label model. These smoke observations are not pilot results. The
+queue comparison isolates the switch's server-facing egress qdisc, while the
+configured endpoint loss and delay model a controlled test path, not a live
+Internet route.
+
 The run-specific plots are in [`plots/mininet_full`](plots/mininet_full), and
 the machine-readable evaluation is
 [`results/mininet_full/evaluation_results.json`](results/mininet_full/evaluation_results.json).

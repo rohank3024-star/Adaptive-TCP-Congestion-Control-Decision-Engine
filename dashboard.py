@@ -12,6 +12,8 @@ from urllib.parse import parse_qs, urlparse
 import joblib
 import numpy as np
 
+from analyze_fairness import summarize as summarize_fairness
+
 
 PAGE = r"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -31,21 +33,53 @@ PAGE = r"""<!doctype html>
 <button>Get recommendation</button></form><div class="result" id="prediction">Enter conditions to query the trained model.</div>
 <div class="note">This is a model prediction from the completed emulated Mininet dataset. It does not change the active TCP algorithm or run live traffic.</div></section></div>
 <section><h2>Measured comparison and evaluation</h2><div id="comparison"></div></section>
+<section style="margin-top:14px"><h2>Competing flows: queueing, fairness &amp; loaded latency</h2><div class="note" id="fairness-note"></div><div id="fairness-comparison"></div><div id="fairness-paired"></div></section>
 <div class="foot">Dataset: <span id="dataset"></span>. Held-out evaluation is split by complete network conditions. Pantheon and synthetic datasets are not mixed into these results.</div>
 </main><script>
 const fmt=x=>Number(x).toFixed(2);
+const ci=x=>x&&x.mean!==null?`${fmt(x.mean)} [${fmt(x.ci95_low)}, ${fmt(x.ci95_high)}]`:'—';
 async function load(){const r=await fetch('/api/summary');const d=await r.json();
 document.getElementById('dataset').textContent=d.dataset;
 document.getElementById('metrics').innerHTML=[['Raw observations',d.rows],['Network conditions',d.conditions],['Runs per algorithm / condition',d.repetitions],['Winning labels',Object.entries(d.wins).map(([k,v])=>`${k.toUpperCase()} ${v}`).join(' · ')]].map(([k,v])=>`<div class="card"><div class="sub">${k}</div><div class="metric">${v}</div></div>`).join('');
 const b=d.baselines;document.getElementById('comparison').innerHTML=`<table><thead><tr><th>Strategy / metric</th><th>Held-out mean throughput / score</th></tr></thead><tbody><tr><td>Always Reno</td><td>${fmt(b.always_reno_tp)} Mbps</td></tr><tr><td>Always Cubic</td><td>${fmt(b.always_cubic_tp)} Mbps</td></tr><tr><td>Always BBR</td><td>${fmt(b.always_bbr_tp)} Mbps</td></tr><tr><td>Random Forest adaptive</td><td>${fmt(b.ml_adaptive_tp)} Mbps (${fmt(b.improvement_over_best_fixed_pct)}% vs best fixed)</td></tr><tr><td>Random Forest accuracy</td><td>${fmt(100*d.rf_accuracy)}%</td></tr><tr><td>Decision Tree accuracy</td><td>${fmt(100*d.dt_accuracy)}%</td></tr></tbody></table><p class="note">The held-out set contains ${b.test_conditions} conditions. Results do not show an adaptive throughput gain over always-BBR.</p>`;
+renderFairness(d.fairness||[]);
 draw(d.bandwidth_means);}
+function renderFairness(scenarios){const note=document.getElementById('fairness-note'),by=document.getElementById('fairness-comparison'),paired=document.getElementById('fairness-paired');if(!scenarios.length){note.textContent='No competing-flow CSV loaded. Start dashboard.py with --fairness-csv and the dataset path; repeat the option for additional conditions.';return}note.textContent='Measured Mininet data. Intervals are 95% Student-t confidence intervals over complete runs; results apply only to the displayed conditions.';by.innerHTML=scenarios.map(s=>`<h3>${s.condition} · ${s.dataset}</h3><table><thead><tr><th>Queue</th><th>Competing algorithms</th><th>Total throughput Mbps [95% CI]</th><th>RTT increase ms [95% CI]</th><th>Jain fairness [95% CI]</th><th>Paired runs</th></tr></thead><tbody>${s.groups.map(g=>`<tr><td>${g.queue_discipline}</td><td>${g.variant_pair.toUpperCase()}</td><td>${ci(g.aggregate_throughput_mbps)}</td><td>${ci(g.loaded_rtt_increase_ms)}</td><td>${ci(g.jain_fairness)}</td><td>${g.complete_paired_runs}</td></tr>`).join('')}</tbody></table>`).join('');paired.innerHTML=scenarios.map(s=>`<h3>Paired queue effect · ${s.condition}</h3><p class="note">FQ-CoDel minus pfifo; negative RTT change means lower loaded delay.</p><table><thead><tr><th>Competing algorithms</th><th>Total throughput change Mbps [95% CI]</th><th>RTT increase change ms [95% CI]</th><th>Fairness change [95% CI]</th><th>Paired runs</th></tr></thead><tbody>${s.paired_queue_comparisons.map(g=>`<tr><td>${g.variant_pair.toUpperCase()}</td><td>${ci(g.aggregate_throughput_mbps)}</td><td>${ci(g.loaded_rtt_increase_ms)}</td><td>${ci(g.jain_fairness)}</td><td>${g.paired_repetitions}</td></tr>`).join('')}</tbody></table>`).join('')}
 function draw(rows){const c=document.getElementById('chart'),ctx=c.getContext('2d'),ratio=devicePixelRatio||1;c.width=c.clientWidth*ratio;c.height=c.clientHeight*ratio;ctx.scale(ratio,ratio);const w=c.clientWidth,h=c.clientHeight,p={l:46,r:14,t:16,b:36};ctx.clearRect(0,0,w,h);const colors={reno:'#f2a65a',cubic:'#b994f6',bbr:'#45c7d8'},max=Math.max(...rows.flatMap(x=>[x.reno,x.cubic,x.bbr]))*1.12;ctx.font='11px system-ui';ctx.strokeStyle='#273650';ctx.fillStyle='#a9b8cc';for(let i=0;i<=4;i++){let y=p.t+(h-p.t-p.b)*i/4;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();ctx.fillText((max*(1-i/4)).toFixed(0),5,y+4)}const step=(w-p.l-p.r)/rows.length,bw=Math.min(10,step/5);rows.forEach((x,i)=>{let cx=p.l+step*(i+.5);ctx.fillText(x.bandwidth,cx-9,h-12);['reno','cubic','bbr'].forEach((v,j)=>{let bh=(h-p.t-p.b)*x[v]/max;ctx.fillStyle=colors[v];ctx.fillRect(cx+(j-1)*bw*1.2-bw/2,h-p.b-bh,bw,bh)})});let lx=p.l;[['reno',colors.reno],['cubic',colors.cubic],['bbr',colors.bbr]].forEach(([v,col])=>{ctx.fillStyle=col;ctx.fillRect(lx,p.t,9,9);ctx.fillStyle='#a9b8cc';ctx.fillText(v.toUpperCase(),lx+13,p.t+9);lx+=72})}
 document.getElementById('form').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target),q=new URLSearchParams();for(const [k,v] of f)if(v!=='')q.set(k,v);const box=document.getElementById('prediction');box.textContent='Predicting…';const r=await fetch('/api/predict?'+q);const d=await r.json();if(!r.ok){box.textContent=d.error;return}const cs=Object.entries(d.confidence).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<span class="pill">${k.toUpperCase()} ${fmt(v*100)}%</span>`).join('');box.innerHTML=`<div>Recommended variant</div><strong>${d.recommended_tcp.toUpperCase()}</strong><div>${cs}</div><div class="note">Baseline RTT used: ${fmt(d.baseline_rtt_ms)} ms</div>`});
 load().catch(e=>document.getElementById('metrics').textContent='Could not load experiment summary: '+e);
 </script></body></html>"""
 
 
-def load_summary(raw_path, ml_path, results_path):
+def load_fairness_summaries(fairness_paths):
+    """Load fairness CSVs separately to preserve each condition's provenance."""
+    summaries = []
+    for raw_path in fairness_paths:
+        path = Path(raw_path)
+        with path.open(newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        if not rows:
+            raise ValueError(f"fairness CSV has no measurements: {path}")
+        conditions = sorted({
+            (row["bandwidth_mbps"], row["delay_ms"], row["loss_pct"])
+            for row in rows
+        })
+        label = "; ".join(
+            f"{bw} Mbps / {delay} ms / {loss}% loss" for bw, delay, loss in conditions
+        )
+        analysis = summarize_fairness(path)
+        if not analysis["groups"]:
+            raise ValueError(f"fairness CSV contains no complete paired runs: {path}")
+        summaries.append({
+            "dataset": path.name,
+            "condition": label,
+            "groups": analysis["groups"],
+            "paired_queue_comparisons": analysis["paired_queue_comparisons"],
+        })
+    return summaries
+
+
+def load_summary(raw_path, ml_path, results_path, fairness_paths=None):
     with open(raw_path, newline="") as handle:
         raw = list(csv.DictReader(handle))
     by_bandwidth = defaultdict(lambda: defaultdict(list))
@@ -74,6 +108,7 @@ def load_summary(raw_path, ml_path, results_path):
         "baselines": results["baseline_comparison"],
         "rf_accuracy": results["random_forest"]["accuracy"],
         "dt_accuracy": results["decision_tree"]["accuracy"],
+        "fairness": load_fairness_summaries(fairness_paths or []),
     }
 
 
@@ -130,10 +165,12 @@ def main():
     parser.add_argument("--ml", default="data/dataset_b_mininet.csv")
     parser.add_argument("--results", default="results/mininet_full/evaluation_results.json")
     parser.add_argument("--model", default="models/mininet_full/random_forest.joblib")
+    parser.add_argument("--fairness-csv", action="append", default=[],
+                        help="paired-flow Mininet CSV; repeat for additional conditions")
     parser.add_argument("--host", default="127.0.0.1", help="Defaults to localhost for safe local use")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
-    summary = load_summary(args.raw, args.ml, args.results)
+    summary = load_summary(args.raw, args.ml, args.results, args.fairness_csv)
     model = joblib.load(args.model)
     server = ThreadingHTTPServer((args.host, args.port), make_handler(summary, model))
     print(f"Dashboard ready: http://{args.host}:{args.port} (Ctrl-C to stop)")

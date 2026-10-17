@@ -1,0 +1,458 @@
+{
+  "input": "data/dataset_c_fairness_mininet.csv",
+  "incomplete_pairs_skipped": 0,
+  "groups": [
+    {
+      "queue_discipline": "fq_codel",
+      "variant_pair": "bbr vs cubic",
+      "complete_paired_runs": 6,
+      "aggregate_throughput_mbps": {
+        "mean": 18.077423107228544,
+        "ci95_low": 17.995472744220912,
+        "ci95_high": 18.159373470236176,
+        "n": 6
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 100.65616666666666,
+        "ci95_low": 100.52264713929613,
+        "ci95_high": 100.7896861940372,
+        "n": 6
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 0.31466666666666515,
+        "ci95_low": 0.19409587301621212,
+        "ci95_high": 0.4352374603171182,
+        "n": 6
+      },
+      "jain_fairness": {
+        "mean": 0.9963353984578488,
+        "ci95_low": 0.9953133069342674,
+        "ci95_high": 0.9973574899814301,
+        "n": 6
+      }
+    },
+    {
+      "queue_discipline": "fq_codel",
+      "variant_pair": "bbr vs reno",
+      "complete_paired_runs": 6,
+      "aggregate_throughput_mbps": {
+        "mean": 17.93851155835687,
+        "ci95_low": 17.73800007266798,
+        "ci95_high": 18.139023044045757,
+        "n": 6
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 100.84141666666666,
+        "ci95_low": 100.32779317058474,
+        "ci95_high": 101.35504016274858,
+        "n": 6
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 0.533833333333335,
+        "ci95_low": 0.016172132742445555,
+        "ci95_high": 1.0514945339242245,
+        "n": 6
+      },
+      "jain_fairness": {
+        "mean": 0.9694778539472195,
+        "ci95_low": 0.9552367624167402,
+        "ci95_high": 0.9837189454776989,
+        "n": 6
+      }
+    },
+    {
+      "queue_discipline": "fq_codel",
+      "variant_pair": "cubic vs reno",
+      "complete_paired_runs": 6,
+      "aggregate_throughput_mbps": {
+        "mean": 16.79481009158314,
+        "ci95_low": 16.684230011533202,
+        "ci95_high": 16.90539017163308,
+        "n": 6
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 100.70133333333335,
+        "ci95_low": 100.61126410109031,
+        "ci95_high": 100.79140256557639,
+        "n": 6
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 0.4065000000000012,
+        "ci95_low": 0.3233734296746834,
+        "ci95_high": 0.489626570325319,
+        "n": 6
+      },
+      "jain_fairness": {
+        "mean": 0.9800336472010018,
+        "ci95_low": 0.9698523808202749,
+        "ci95_high": 0.9902149135817288,
+        "n": 6
+      }
+    },
+    {
+      "queue_discipline": "pfifo",
+      "variant_pair": "bbr vs cubic",
+      "complete_paired_runs": 6,
+      "aggregate_throughput_mbps": {
+        "mean": 18.410914014192826,
+        "ci95_low": 18.354294056404356,
+        "ci95_high": 18.467533971981297,
+        "n": 6
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 323.42158333333333,
+        "ci95_low": 311.7213871999897,
+        "ci95_high": 335.12177946667697,
+        "n": 6
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 223.09816666666666,
+        "ci95_low": 211.45699715655041,
+        "ci95_high": 234.7393361767829,
+        "n": 6
+      },
+      "jain_fairness": {
+        "mean": 0.7526923480663653,
+        "ci95_low": 0.7311276505960294,
+        "ci95_high": 0.7742570455367013,
+        "n": 6
+      }
+    },
+    {
+      "queue_discipline": "pfifo",
+      "variant_pair": "bbr vs reno",
+      "complete_paired_runs": 6,
+      "aggregate_throughput_mbps": {
+        "mean": 12.216704158756173,
+        "ci95_low": 11.217088568138792,
+        "ci95_high": 13.216319749373554,
+        "n": 6
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 1062.28025,
+        "ci95_low": 1050.5104300580228,
+        "ci95_high": 1074.0500699419772,
+        "n": 6
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 953.9189166666666,
+        "ci95_low": 935.1033856781786,
+        "ci95_high": 972.7344476551547,
+        "n": 6
+      },
+      "jain_fairness": {
+        "mean": 0.6408932907659197,
+        "ci95_low": 0.6237177405247114,
+        "ci95_high": 0.658068841007128,
+        "n": 6
+      }
+    },
+    {
+      "queue_discipline": "pfifo",
+      "variant_pair": "cubic vs reno",
+      "complete_paired_runs": 6,
+      "aggregate_throughput_mbps": {
+        "mean": 13.51824990761836,
+        "ci95_low": 12.697204198262058,
+        "ci95_high": 14.339295616974661,
+        "n": 6
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 1049.3959166666666,
+        "ci95_low": 951.0647092984617,
+        "ci95_high": 1147.7271240348714,
+        "n": 6
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 948.8280833333333,
+        "ci95_low": 850.7257811397301,
+        "ci95_high": 1046.9303855269366,
+        "n": 6
+      },
+      "jain_fairness": {
+        "mean": 0.6279350474093456,
+        "ci95_low": 0.5580838070303061,
+        "ci95_high": 0.697786287788385,
+        "n": 6
+      }
+    }
+  ],
+  "per_variant": [
+    {
+      "queue_discipline": "fq_codel",
+      "tcp_variant": "bbr",
+      "complete_flow_observations": 12,
+      "throughput_mbps": {
+        "mean": 10.059155297106157,
+        "ci95_low": 9.718817711155882,
+        "ci95_high": 10.399492883056432,
+        "n": 12
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 100.80666666666667,
+        "ci95_low": 100.5607874126692,
+        "ci95_high": 101.05254592066414,
+        "n": 12
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 0.4780833333333329,
+        "ci95_low": 0.22535453397255484,
+        "ci95_high": 0.730812132694111,
+        "n": 12
+      },
+      "throughput_within_rtt_limit_mbps": {
+        "mean": 10.059155297106157,
+        "ci95_low": 9.718817711155882,
+        "ci95_high": 10.399492883056432,
+        "n": 12
+      },
+      "max_loaded_rtt_increase_ms": 20.0,
+      "latency_constraint": "loaded RTT increase <= configured limit"
+    },
+    {
+      "queue_discipline": "fq_codel",
+      "tcp_variant": "cubic",
+      "complete_flow_observations": 12,
+      "throughput_mbps": {
+        "mean": 9.01171661486906,
+        "ci95_low": 8.623861058671213,
+        "ci95_high": 9.399572171066907,
+        "n": 12
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 100.69200000000001,
+        "ci95_low": 100.59420305641643,
+        "ci95_high": 100.78979694358358,
+        "n": 12
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 0.3835833333333329,
+        "ci95_low": 0.2799823147222708,
+        "ci95_high": 0.48718435194439497,
+        "n": 12
+      },
+      "throughput_within_rtt_limit_mbps": {
+        "mean": 9.01171661486906,
+        "ci95_low": 8.623861058671213,
+        "ci95_high": 9.399572171066907,
+        "n": 12
+      },
+      "max_loaded_rtt_increase_ms": 20.0,
+      "latency_constraint": "loaded RTT increase <= configured limit"
+    },
+    {
+      "queue_discipline": "fq_codel",
+      "tcp_variant": "reno",
+      "complete_flow_observations": 12,
+      "throughput_mbps": {
+        "mean": 7.334500466609058,
+        "ci95_low": 7.076127219310597,
+        "ci95_high": 7.59287371390752,
+        "n": 12
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 100.70025,
+        "ci95_low": 100.47666431733171,
+        "ci95_high": 100.92383568266828,
+        "n": 12
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 0.3933333333333356,
+        "ci95_low": 0.1679681662137836,
+        "ci95_high": 0.6186985004528875,
+        "n": 12
+      },
+      "throughput_within_rtt_limit_mbps": {
+        "mean": 7.334500466609058,
+        "ci95_low": 7.076127219310597,
+        "ci95_high": 7.59287371390752,
+        "n": 12
+      },
+      "max_loaded_rtt_increase_ms": 20.0,
+      "latency_constraint": "loaded RTT increase <= configured limit"
+    },
+    {
+      "queue_discipline": "pfifo",
+      "tcp_variant": "bbr",
+      "complete_flow_observations": 12,
+      "throughput_mbps": {
+        "mean": 2.733592149366361,
+        "ci95_low": 1.9239240338374435,
+        "ci95_high": 3.5432602648952782,
+        "n": 12
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 692.917,
+        "ci95_low": 447.58612308281414,
+        "ci95_high": 938.247876917186,
+        "n": 12
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 588.5795833333333,
+        "ci95_low": 345.84272735947405,
+        "ci95_high": 831.3164393071925,
+        "n": 12
+      },
+      "throughput_within_rtt_limit_mbps": {
+        "mean": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "n": 0
+      },
+      "max_loaded_rtt_increase_ms": 20.0,
+      "latency_constraint": "loaded RTT increase <= configured limit"
+    },
+    {
+      "queue_discipline": "pfifo",
+      "tcp_variant": "cubic",
+      "complete_flow_observations": 12,
+      "throughput_mbps": {
+        "mean": 8.01605190476655,
+        "ci95_low": 3.710563495597472,
+        "ci95_high": 12.321540313935628,
+        "n": 12
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 686.4350833333333,
+        "ci95_low": 442.1946077906699,
+        "ci95_high": 930.6755588759967,
+        "n": 12
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 585.986,
+        "ci95_low": 341.840865678298,
+        "ci95_high": 830.131134321702,
+        "n": 12
+      },
+      "throughput_within_rtt_limit_mbps": {
+        "mean": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "n": 0
+      },
+      "max_loaded_rtt_increase_ms": 20.0,
+      "latency_constraint": "loaded RTT increase <= configured limit"
+    },
+    {
+      "queue_discipline": "pfifo",
+      "tcp_variant": "reno",
+      "complete_flow_observations": 12,
+      "throughput_mbps": {
+        "mean": 11.323289986150767,
+        "ci95_low": 10.678242260853175,
+        "ci95_high": 11.96833771144836,
+        "n": 12
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": 1055.7456666666667,
+        "ci95_low": 1015.0997073617579,
+        "ci95_high": 1096.3916259715754,
+        "n": 12
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": 951.2795833333333,
+        "ci95_low": 910.459043703878,
+        "ci95_high": 992.1001229627886,
+        "n": 12
+      },
+      "throughput_within_rtt_limit_mbps": {
+        "mean": null,
+        "ci95_low": null,
+        "ci95_high": null,
+        "n": 0
+      },
+      "max_loaded_rtt_increase_ms": 20.0,
+      "latency_constraint": "loaded RTT increase <= configured limit"
+    }
+  ],
+  "paired_queue_comparisons": [
+    {
+      "queue_comparison": "fq_codel_minus_pfifo",
+      "variant_pair": "bbr vs cubic",
+      "paired_repetitions": 6,
+      "aggregate_throughput_mbps": {
+        "mean": -0.333490906964282,
+        "ci95_low": -0.4462205188120736,
+        "ci95_high": -0.22076129511649042,
+        "n": 6
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": -222.76541666666665,
+        "ci95_low": -234.49275668587327,
+        "ci95_high": -211.03807664746003,
+        "n": 6
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": -222.7835,
+        "ci95_low": -234.38956276902684,
+        "ci95_high": -211.17743723097317,
+        "n": 6
+      },
+      "jain_fairness": {
+        "mean": 0.24364305039148357,
+        "ci95_low": 0.2217359987338115,
+        "ci95_high": 0.26555010204915563,
+        "n": 6
+      }
+    },
+    {
+      "queue_comparison": "fq_codel_minus_pfifo",
+      "variant_pair": "bbr vs reno",
+      "paired_repetitions": 6,
+      "aggregate_throughput_mbps": {
+        "mean": 5.721807399600695,
+        "ci95_low": 4.751718216318212,
+        "ci95_high": 6.691896582883178,
+        "n": 6
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": -961.4388333333333,
+        "ci95_low": -973.0688995299876,
+        "ci95_high": -949.808767136679,
+        "n": 6
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": -953.3850833333332,
+        "ci95_low": -972.0096907848036,
+        "ci95_high": -934.7604758818628,
+        "n": 6
+      },
+      "jain_fairness": {
+        "mean": 0.3285845631812998,
+        "ci95_low": 0.30383662997194705,
+        "ci95_high": 0.35333249639065256,
+        "n": 6
+      }
+    },
+    {
+      "queue_comparison": "fq_codel_minus_pfifo",
+      "variant_pair": "cubic vs reno",
+      "paired_repetitions": 6,
+      "aggregate_throughput_mbps": {
+        "mean": 3.2765601839647793,
+        "ci95_low": 2.440333026904277,
+        "ci95_high": 4.112787341025282,
+        "n": 6
+      },
+      "loaded_rtt_avg_ms": {
+        "mean": -948.6945833333333,
+        "ci95_low": -1046.980515090486,
+        "ci95_high": -850.4086515761805,
+        "n": 6
+      },
+      "loaded_rtt_increase_ms": {
+        "mean": -948.4215833333334,
+        "ci95_low": -1046.4625520262687,
+        "ci95_high": -850.3806146403981,
+        "n": 6
+      },
+      "jain_fairness": {
+        "mean": 0.3520985997916562,
+        "ci95_low": 0.28589563421814707,
+        "ci95_high": 0.41830156536516533,
+        "n": 6
+      }
+    }
+  ],
+  "unpaired_queue_comparisons_skipped": 0
+}

@@ -162,6 +162,42 @@ python3 dashboard.py
 # Open http://127.0.0.1:8000
 ```
 
+## Two-flow fairness and queue-discipline extension
+
+The advanced experiment compares a shared FIFO (`pfifo`) bottleneck against
+FQ-CoDel while two TCP senders run concurrently. It records per-flow receiver
+throughput/retransmissions, Jain fairness, and ping RTT measured during load.
+It writes a separate CSV and never modifies the completed single-flow dataset:
+
+```bash
+sudo python3 fairness_experiment.py --mode smoke --repetitions 1 \
+  --output data/dataset_c_fairness_smoke.csv
+sudo python3 fairness_experiment.py --mode pilot --repetitions 6 \
+  --output data/dataset_c_fairness_mininet.csv
+python3 analyze_fairness.py data/dataset_c_fairness_mininet.csv \
+  --max-loaded-rtt-increase-ms 20 \
+  --output results/fairness_mininet_summary.json
+python3 -m unittest -v test_fairness_experiment.py
+```
+
+Run the smoke test before the pilot. The pilot comprises 36 paired tests
+(three Reno/Cubic/BBR pairings × two queue disciplines × six repetitions),
+with 10-second overlapping flows and a concurrent loaded-ping sample. Review
+the report's experiment notes and inspect the resulting CSV before making
+claims; the new measurements are not used by the existing single-flow model.
+The optional RTT ceiling is an example application objective, not a universal
+threshold; choose and justify it for your use case.
+
+To show the queue/fairness tables in the dashboard, pass each condition's CSV
+as a separate option (the dashboard keeps their provenance separate):
+
+```bash
+python3 dashboard.py \
+  --fairness-csv data/dataset_c_fairness_mininet.csv \
+  --fairness-csv data/dataset_c_fairness_5mbps.csv \
+  --fairness-csv data/dataset_c_fairness_50mbps.csv
+```
+
 The dashboard displays measured Mininet throughput and held-out comparisons,
 and provides an advisory model prediction. It does not change the active TCP
 algorithm or run network traffic.
