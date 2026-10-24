@@ -33,3 +33,11 @@ read_pdf.py
 # Docs (kept locally only)
 *.docx
 *.pdf
+
+# Local Mininet smoke-test artifacts
+/data/dataset_a_mininet_pilot.csv
+/data/dataset_a_mininet_smoke.csv
+/data/dataset_a_smoke_real.csv
+/data/dataset_a_smoke_receiver.csv
+/data/dataset_c_fairness_smoke.csv
+/data/dataset_c_fairness_smoke_repeat.csv
