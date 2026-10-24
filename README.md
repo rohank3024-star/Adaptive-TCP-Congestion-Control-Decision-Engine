@@ -107,8 +107,11 @@ python test_cases.py
 The completed Mininet experiment contains 1,350 observations across 150
 conditions. On 30 held-out conditions, Random Forest accuracy was 76.67% and
 adaptive throughput was 29.96 Mbps, versus 30.02 Mbps for always-BBR (−0.21%).
-This result does not demonstrate an adaptive throughput improvement. The older
-synthetic development scores are not experimental evidence. See
+Complementary 5-fold condition-stratified cross-validation reached 84.00%
+out-of-fold accuracy, while adaptive selection remained effectively tied with
+always-BBR (24.08 versus 24.08 Mbps; −0.01%). Neither evaluation demonstrates
+an adaptive throughput improvement. The older synthetic development scores are
+not experimental evidence. See
 [`REPORT_MININET.md`](REPORT_MININET.md) for methodology, recovery provenance,
 limitations, and the full results.
 
@@ -145,7 +148,7 @@ sudo python3 run_experiment.py --mode pilot --repetitions 3 \
 python3 data_preparation.py --input data/dataset_a_mininet.csv \
   --output data/dataset_b_mininet.csv
 python3 ml_pipeline.py --input data/dataset_b_mininet.csv \
-  --model-dir models/mininet --results-dir results/mininet
+  --model-dir models/mininet --results-dir results/mininet --cv-folds 5
 python3 visualizations.py --raw data/dataset_a_mininet.csv \
   --ml data/dataset_b_mininet.csv --results results/mininet/evaluation_results.json \
   --output-dir plots/mininet

@@ -22,7 +22,7 @@ import joblib
 import argparse
 from datetime import datetime
 
-from sklearn.model_selection import GroupShuffleSplit
+from sklearn.model_selection import GroupShuffleSplit, StratifiedKFold
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import (
@@ -111,20 +111,34 @@ def held_out_split(df, test_size=TEST_SIZE):
 # ---------------------------------------------------------------------------
 def train_decision_tree(X_train, y_train):
     """Train a baseline Decision Tree classifier."""
-    dt = DecisionTreeClassifier(
-        max_depth=8,
-        min_samples_leaf=3,
-        random_state=RANDOM_STATE
-    )
+    dt = build_decision_tree()
     dt.fit(X_train, y_train)
     train_acc = dt.score(X_train, y_train)
     print(f"\n[DT] Decision Tree trained – Train accuracy: {train_acc:.4f}")
     return dt
 
 
+def build_decision_tree():
+    """Construct the deterministic decision-tree baseline."""
+    return DecisionTreeClassifier(
+        max_depth=8,
+        min_samples_leaf=3,
+        random_state=RANDOM_STATE
+    )
+
+
 def train_random_forest(X_train, y_train):
     """Train the primary Random Forest classifier."""
-    rf = RandomForestClassifier(
+    rf = build_random_forest()
+    rf.fit(X_train, y_train)
+    train_acc = rf.score(X_train, y_train)
+    print(f"\n[RF] Random Forest trained – Train accuracy: {train_acc:.4f}")
+    return rf
+
+
+def build_random_forest():
+    """Construct the deterministic Random Forest selector."""
+    return RandomForestClassifier(
         n_estimators=200,
         max_depth=12,
         min_samples_leaf=2,
@@ -133,10 +147,6 @@ def train_random_forest(X_train, y_train):
         random_state=RANDOM_STATE,
         n_jobs=-1
     )
-    rf.fit(X_train, y_train)
-    train_acc = rf.score(X_train, y_train)
-    print(f"\n[RF] Random Forest trained – Train accuracy: {train_acc:.4f}")
-    return rf
 
 
 # ---------------------------------------------------------------------------
@@ -202,6 +212,39 @@ def get_feature_importance(model, feature_names=FEATURE_COLS):
 # ---------------------------------------------------------------------------
 # Baseline comparison (the key evaluation)
 # ---------------------------------------------------------------------------
+def calculate_strategy_throughputs(df, predicted_variants):
+    """Compare fixed variants, an adaptive policy, and the oracle on a row set."""
+    if len(df) != len(predicted_variants):
+        raise ValueError("Each evaluation condition needs one predicted variant.")
+
+    tp_cols = {"reno": "reno_tp", "cubic": "cubic_tp", "bbr": "bbr_tp"}
+    predicted_variants = np.asarray(predicted_variants)
+    invalid = set(predicted_variants) - set(tp_cols)
+    if invalid:
+        raise ValueError(f"Unknown predicted TCP variants: {sorted(invalid)}")
+
+    adaptive = [row[tp_cols[predicted]]
+                for (_, row), predicted in zip(df.iterrows(), predicted_variants)]
+    always_reno = df["reno_tp"].mean()
+    always_cubic = df["cubic_tp"].mean()
+    always_bbr = df["bbr_tp"].mean()
+    best_fixed = max(always_reno, always_cubic, always_bbr)
+    ml_adaptive = float(np.mean(adaptive))
+    oracle = (df["best_throughput"].mean()
+              if "best_throughput" in df.columns else ml_adaptive)
+
+    return {
+        "always_reno_tp": round(float(always_reno), 2),
+        "always_cubic_tp": round(float(always_cubic), 2),
+        "always_bbr_tp": round(float(always_bbr), 2),
+        "ml_adaptive_tp": round(ml_adaptive, 2),
+        "oracle_tp": round(float(oracle), 2),
+        "improvement_over_best_fixed_pct": round(
+            (ml_adaptive - best_fixed) / best_fixed * 100, 2
+        ) if best_fixed > 0 else 0,
+    }
+
+
 def baseline_comparison(df, test_idx):
     """
     Compare average throughput on held-out conditions for:
@@ -223,22 +266,8 @@ def baseline_comparison(df, test_idx):
     """
     df_test = df.iloc[test_idx].copy()
     
-    # Throughput for each fixed strategy
-    always_reno  = df_test["reno_tp"].mean()
-    always_cubic = df_test["cubic_tp"].mean()
-    always_bbr   = df_test["bbr_tp"].mean()
-    
-    # Throughput for ML selection
-    tp_cols = {"reno": "reno_tp", "cubic": "cubic_tp", "bbr": "bbr_tp"}
-    ml_throughputs = []
-    for _, row in df_test.iterrows():
-        predicted = row.get("predicted_variant", row["best_variant"])
-        tp_col = tp_cols.get(predicted, "bbr_tp")
-        ml_throughputs.append(row[tp_col])
-    ml_adaptive = np.mean(ml_throughputs)
-    
-    # Oracle (always picks the best – upper bound)
-    oracle = df_test["best_throughput"].mean() if "best_throughput" in df_test.columns else ml_adaptive
+    predicted_variants = df_test["predicted_variant"].to_numpy()
+    result = calculate_strategy_throughputs(df_test, predicted_variants)
     
     print(f"\n{'='*60}")
     print(f"  BASELINE COMPARISON (Held-out Test Conditions)")
@@ -246,32 +275,83 @@ def baseline_comparison(df, test_idx):
     print(f"  Strategy            Avg Throughput (Mbps)  vs Best Fixed")
     print(f"  ─────────────────   ─────────────────────  ─────────────")
     
-    best_fixed = max(always_reno, always_cubic, always_bbr)
     strategies = {
-        "Always Reno":    always_reno,
-        "Always Cubic":   always_cubic,
-        "Always BBR":     always_bbr,
-        "ML Adaptive":    ml_adaptive,
-        "Oracle (ideal)": oracle
+        "Always Reno": result["always_reno_tp"],
+        "Always Cubic": result["always_cubic_tp"],
+        "Always BBR": result["always_bbr_tp"],
+        "ML Adaptive": result["ml_adaptive_tp"],
+        "Oracle (ideal)": result["oracle_tp"],
     }
+    best_fixed = max(strategies[name] for name in
+                     ("Always Reno", "Always Cubic", "Always BBR"))
     
     for name, tp in strategies.items():
         improvement = ((tp - best_fixed) / best_fixed * 100) if best_fixed > 0 else 0
         marker = " ◄ BEST" if tp == max(strategies.values()) else ""
         print(f"  {name:20s}  {tp:8.2f} Mbps          {improvement:+.1f}%{marker}")
     
-    result = {
-        "always_reno_tp": round(always_reno, 2),
-        "always_cubic_tp": round(always_cubic, 2),
-        "always_bbr_tp": round(always_bbr, 2),
-        "ml_adaptive_tp": round(ml_adaptive, 2),
-        "oracle_tp": round(oracle, 2),
-        "improvement_over_best_fixed_pct": round(
-            (ml_adaptive - best_fixed) / best_fixed * 100, 2
-        ) if best_fixed > 0 else 0
-    }
-    
     return result
+
+
+def cross_validate_conditions(df, n_splits=5):
+    """Evaluate the selector with out-of-fold predictions for all conditions.
+
+    Dataset B has one row per complete network condition, so each fold holds
+    out complete conditions and never reuses their labels during that fold's
+    training. Stratification keeps the rare Cubic and Reno winners represented
+    whenever the label counts permit it.
+    """
+    if n_splits < 2:
+        raise ValueError("Cross-validation requires at least two folds.")
+    label_counts = df[LABEL_COL].value_counts()
+    smallest_class = int(label_counts.min())
+    if smallest_class < n_splits:
+        raise ValueError(
+            f"Cannot use {n_splits} folds: the smallest class has "
+            f"only {smallest_class} conditions."
+        )
+
+    features = df[FEATURE_COLS].values
+    labels = df[LABEL_COL].values
+    splitter = StratifiedKFold(
+        n_splits=n_splits, shuffle=True, random_state=RANDOM_STATE
+    )
+    out_of_fold = np.empty(len(df), dtype=object)
+    fold_results = []
+
+    for fold, (train_idx, test_idx) in enumerate(splitter.split(features, labels), 1):
+        model = build_random_forest()
+        model.fit(features[train_idx], labels[train_idx])
+        predictions = model.predict(features[test_idx])
+        out_of_fold[test_idx] = predictions
+        comparison = calculate_strategy_throughputs(df.iloc[test_idx], predictions)
+        fold_results.append({
+            "fold": fold,
+            "train_size": len(train_idx),
+            "test_size": len(test_idx),
+            "accuracy": round(float(accuracy_score(labels[test_idx], predictions)), 4),
+            "weighted_f1": round(float(f1_score(
+                labels[test_idx], predictions, average="weighted", zero_division=0
+            )), 4),
+            "baseline_comparison": comparison,
+        })
+
+    return {
+        "method": (
+            f"{n_splits}-fold stratified evaluation over complete network conditions"
+        ),
+        "n_splits": n_splits,
+        "random_state": RANDOM_STATE,
+        "out_of_fold_accuracy": round(float(accuracy_score(labels, out_of_fold)), 4),
+        "out_of_fold_weighted_f1": round(float(f1_score(
+            labels, out_of_fold, average="weighted", zero_division=0
+        )), 4),
+        "out_of_fold_macro_f1": round(float(f1_score(
+            labels, out_of_fold, average="macro", zero_division=0
+        )), 4),
+        "baseline_comparison": calculate_strategy_throughputs(df, out_of_fold),
+        "folds": fold_results,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -299,7 +379,8 @@ def save_results(results, results_dir=RESULTS_DIR):
 # ---------------------------------------------------------------------------
 # Full ML pipeline
 # ---------------------------------------------------------------------------
-def run_ml_pipeline(ml_csv=ML_CSV, model_dir=MODEL_DIR, results_dir=RESULTS_DIR):
+def run_ml_pipeline(ml_csv=ML_CSV, model_dir=MODEL_DIR, results_dir=RESULTS_DIR,
+                    cv_folds=5):
     """
     Execute the complete ML pipeline:
     1. Load data
@@ -308,7 +389,8 @@ def run_ml_pipeline(ml_csv=ML_CSV, model_dir=MODEL_DIR, results_dir=RESULTS_DIR)
     4. Train Random Forest
     5. Evaluate both models
     6. Run baseline comparison
-    7. Save models and results
+    7. Run condition-stratified cross-validation
+    8. Save models and results
     """
     print("\n" + "=" * 70)
     print("  Module M5: Machine Learning Pipeline")
@@ -339,6 +421,15 @@ def run_ml_pipeline(ml_csv=ML_CSV, model_dir=MODEL_DIR, results_dir=RESULTS_DIR)
     
     # Baseline comparison
     comparison = baseline_comparison(df_with_pred, test_idx)
+
+    # Complementary out-of-fold evaluation across all complete conditions.
+    cross_validation = cross_validate_conditions(df, cv_folds)
+    cv_comparison = cross_validation["baseline_comparison"]
+    print(f"\n[CV] {cross_validation['method']}")
+    print(f"  Out-of-fold accuracy: {cross_validation['out_of_fold_accuracy']:.2%}")
+    print(f"  Adaptive throughput: {cv_comparison['ml_adaptive_tp']:.2f} Mbps")
+    print("  Improvement over best fixed: "
+          f"{cv_comparison['improvement_over_best_fixed_pct']:+.2f}%")
     
     # Save everything
     save_model(dt_model, "decision_tree", model_dir)
@@ -354,7 +445,8 @@ def run_ml_pipeline(ml_csv=ML_CSV, model_dir=MODEL_DIR, results_dir=RESULTS_DIR)
         "random_forest": rf_metrics,
         "dt_feature_importance": dt_importance,
         "rf_feature_importance": rf_importance,
-        "baseline_comparison": comparison
+        "baseline_comparison": comparison,
+        "cross_validation": cross_validation,
     }
     save_results(all_results, results_dir)
     
@@ -377,5 +469,9 @@ if __name__ == "__main__":
     parser.add_argument("--input", default=ML_CSV, help="Aggregated ML CSV input path")
     parser.add_argument("--model-dir", default=MODEL_DIR, help="Directory for trained models")
     parser.add_argument("--results-dir", default=RESULTS_DIR, help="Directory for evaluation JSON")
+    parser.add_argument("--cv-folds", type=int, default=5,
+                        help="Condition-stratified cross-validation folds (default: 5)")
     args = parser.parse_args()
-    results, model = run_ml_pipeline(args.input, args.model_dir, args.results_dir)
+    results, model = run_ml_pipeline(
+        args.input, args.model_dir, args.results_dir, args.cv_folds
+    )

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-17T09:57:13.053009",
+  "timestamp": "2026-10-24T13:11:18.765922",
   "input_dataset": "data/dataset_b_mininet.csv",
   "dataset_size": 150,
   "train_size": 120,
@@ -199,5 +199,98 @@
     "ml_adaptive_tp": 29.96,
     "oracle_tp": 30.04,
     "improvement_over_best_fixed_pct": -0.21
+  },
+  "cross_validation": {
+    "method": "5-fold stratified evaluation over complete network conditions",
+    "n_splits": 5,
+    "random_state": 42,
+    "out_of_fold_accuracy": 0.84,
+    "out_of_fold_weighted_f1": 0.8493,
+    "out_of_fold_macro_f1": 0.6187,
+    "baseline_comparison": {
+      "always_reno_tp": 7.31,
+      "always_cubic_tp": 7.53,
+      "always_bbr_tp": 24.08,
+      "ml_adaptive_tp": 24.08,
+      "oracle_tp": 24.12,
+      "improvement_over_best_fixed_pct": -0.01
+    },
+    "folds": [
+      {
+        "fold": 1,
+        "train_size": 120,
+        "test_size": 30,
+        "accuracy": 0.8667,
+        "weighted_f1": 0.8747,
+        "baseline_comparison": {
+          "always_reno_tp": 8.97,
+          "always_cubic_tp": 9.22,
+          "always_bbr_tp": 26.32,
+          "ml_adaptive_tp": 26.29,
+          "oracle_tp": 26.32,
+          "improvement_over_best_fixed_pct": -0.11
+        }
+      },
+      {
+        "fold": 2,
+        "train_size": 120,
+        "test_size": 30,
+        "accuracy": 0.8,
+        "weighted_f1": 0.8163,
+        "baseline_comparison": {
+          "always_reno_tp": 7.48,
+          "always_cubic_tp": 7.68,
+          "always_bbr_tp": 15.93,
+          "ml_adaptive_tp": 15.95,
+          "oracle_tp": 16.01,
+          "improvement_over_best_fixed_pct": 0.12
+        }
+      },
+      {
+        "fold": 3,
+        "train_size": 120,
+        "test_size": 30,
+        "accuracy": 0.7333,
+        "weighted_f1": 0.771,
+        "baseline_comparison": {
+          "always_reno_tp": 9.82,
+          "always_cubic_tp": 10.35,
+          "always_bbr_tp": 31.84,
+          "ml_adaptive_tp": 31.76,
+          "oracle_tp": 31.87,
+          "improvement_over_best_fixed_pct": -0.24
+        }
+      },
+      {
+        "fold": 4,
+        "train_size": 120,
+        "test_size": 30,
+        "accuracy": 0.9,
+        "weighted_f1": 0.8902,
+        "baseline_comparison": {
+          "always_reno_tp": 4.37,
+          "always_cubic_tp": 4.47,
+          "always_bbr_tp": 23.49,
+          "ml_adaptive_tp": 23.53,
+          "oracle_tp": 23.54,
+          "improvement_over_best_fixed_pct": 0.17
+        }
+      },
+      {
+        "fold": 5,
+        "train_size": 120,
+        "test_size": 30,
+        "accuracy": 0.9,
+        "weighted_f1": 0.9,
+        "baseline_comparison": {
+          "always_reno_tp": 5.89,
+          "always_cubic_tp": 5.94,
+          "always_bbr_tp": 22.84,
+          "ml_adaptive_tp": 22.87,
+          "oracle_tp": 22.87,
+          "improvement_over_best_fixed_pct": 0.15
+        }
+      }
+    ]
   }
 }

@@ -16,6 +16,12 @@ that ML selection improves throughput over the best fixed policy. BBR won the
 measured-throughput label in 117 of 150 conditions, so always-BBR is a strong
 baseline in this particular test grid.
 
+A complementary 5-fold condition-stratified evaluation produced one
+out-of-fold prediction for every condition. It reached 84.00% accuracy and
+24.08 Mbps adaptive throughput versus 24.08 Mbps for always-BBR (−0.01%). It
+confirms the fixed-split conclusion: the selector can classify the dominant
+pattern, but does not show a meaningful throughput advantage over BBR here.
+
 ## Data and method
 
 - Topology: Mininet H1–S1–H2, with configured bandwidth, one-way delay, and
@@ -32,6 +38,9 @@ baseline in this particular test grid.
 - Split: deterministic 80/20 group split by complete condition (120 train,
   30 test; random state 42), preventing repeated runs of a condition from
   crossing the train/test boundary.
+- Complementary validation: deterministic 5-fold stratified evaluation over
+  complete aggregated conditions (random state 42). Each out-of-fold prediction
+  comes from a model that did not train on that condition.
 
 ## Measurement recovery and provenance
 
@@ -70,13 +79,19 @@ and exactly three repetitions for each condition/variant group.
 | Always BBR on held-out conditions | 30.02 Mbps |
 | Random Forest adaptive selection | 29.96 Mbps |
 | Adaptive vs best fixed | −0.21% |
+| Five-fold out-of-fold Random Forest accuracy | 84.00% |
+| Five-fold out-of-fold weighted F1 | 0.8493 |
+| Five-fold always-BBR / adaptive throughput | 24.08 / 24.08 Mbps |
+| Five-fold adaptive vs best fixed | −0.01% |
 
 The held-out test labels were imbalanced (24 BBR, 5 Reno, 1 Cubic). The
 Random Forest classified 21/24 BBR, 0/1 Cubic, and 2/5 Reno labels correctly.
 The single Cubic example makes class-specific Cubic performance especially
-uncertain. Decision Tree accuracy was higher than Random Forest accuracy on
-this one fixed split; neither result should be generalized beyond the tested
-grid without additional validation.
+uncertain. The complementary cross-validation distributes the 10 Cubic labels
+across all five held-out folds, but it still evaluates the same controlled grid
+and is not an external-path validation. Decision Tree accuracy was higher than
+Random Forest accuracy on the fixed split; neither result should be generalized
+beyond the tested grid without additional validation.
 
 ## Interpretation and limitations
 
@@ -84,9 +99,10 @@ These are real measurements from a controlled, locally emulated Mininet
 network, not measurements from live Internet paths. The recovered rows are
 real receiver-side summary measurements, but their iperf RTT outcome is
 unavailable. The dataset covers one topology, one machine/kernel setup, a
-fixed parameter grid, and three repetitions. Evaluation uses one 30-condition
-holdout rather than repeated nested validation. The measured-throughput label
-also reflects the tested conditions and short iperf runs; it is not a claim
+fixed parameter grid, and three repetitions. Evaluation includes one
+30-condition holdout plus 5-fold condition-stratified cross-validation, but no
+repeated nested validation or external-path validation. The measured-throughput
+label also reflects the tested conditions and short iperf runs; it is not a claim
 about fairness, latency under load, application quality, or deployment safety.
 
 The predictor is advisory only: the dashboard does not alter a host's active
@@ -104,7 +120,7 @@ python3 data_preparation.py \
   --input data/dataset_a_mininet_full_recovered.csv \
   --output data/dataset_b_mininet.csv
 python3 ml_pipeline.py --input data/dataset_b_mininet.csv \
-  --model-dir models/mininet_full --results-dir results/mininet_full
+  --model-dir models/mininet_full --results-dir results/mininet_full --cv-folds 5
 python3 visualizations.py \
   --raw data/dataset_a_mininet_full_recovered.csv \
   --ml data/dataset_b_mininet.csv \
